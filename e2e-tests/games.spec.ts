@@ -1,6 +1,41 @@
 import { test, expect, type Response } from '@playwright/test';
 
 test.describe('Game Listing and Navigation', () => {
+  test('should filter games by categories and publisher', async ({ page }) => {
+    await test.step('Navigate to homepage', async () => {
+      await page.goto('/');
+    });
+
+    await test.step('Filter by one category', async () => {
+      await page.getByRole('checkbox', { name: 'Strategy' }).check();
+      await expect(page.getByTestId('filter-results-count')).toHaveText('4 games found');
+      await expect(page.getByRole('link', { name: /DevOps Dominion/ })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Code Puzzle Chronicles/ })).toBeHidden();
+    });
+
+    await test.step('Combine multiple categories', async () => {
+      await page.getByRole('checkbox', { name: 'Puzzle' }).check();
+      await expect(page.getByTestId('filter-results-count')).toHaveText('8 games found');
+    });
+
+    await test.step('Combine categories with a publisher', async () => {
+      await page.getByTestId('publisher-filter').selectOption({ label: 'CodeForge Studios' });
+      await expect(page.getByTestId('filter-results-count')).toHaveText('2 games found');
+      await expect(page.getByRole('link', { name: /DevOps Dominion/ })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Code Puzzle Chronicles/ })).toBeVisible();
+      await expect(page.getByRole('link', { name: /Pipeline Conquest/ })).toBeHidden();
+    });
+
+    await test.step('Reset all filters', async () => {
+      await page.getByTestId('reset-filters').click();
+      await expect(page.getByRole('checkbox', { name: 'Strategy' })).not.toBeChecked();
+      await expect(page.getByRole('checkbox', { name: 'Puzzle' })).not.toBeChecked();
+      await expect(page.getByTestId('publisher-filter')).toHaveValue('');
+      await expect(page.getByTestId('filter-results-count')).not.toHaveText('2 games found');
+      await expect(page.getByRole('link', { name: /Pipeline Conquest/ })).toBeVisible();
+    });
+  });
+
   test('should display games with titles on index page', async ({ page }) => {
     await test.step('Navigate to homepage', async () => {
       await page.goto('/');
